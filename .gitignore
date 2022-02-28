@@ -5,6 +5,7 @@
 .aws-sam/
 .aws-sam/*.*
 .toml
+samconfig.toml
 
 ### Linux ###
 *~
