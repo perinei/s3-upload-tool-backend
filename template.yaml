@@ -45,18 +45,22 @@ Parameters:
   pBranch:
     Type: String
     Description: Branch Name
+    Default: ""
 
   pProjectName:
     Type: String
     Description: Project Name
+    Default: ""
 
   pOauthToken:
     Type: String
     Description: Repository Access Token
+    Default: ""
 
   pRepoUrl:
     Type: String
     Description: Repository URL
+    Default: ""
 
   pBucketPrefix:
     Type: String
