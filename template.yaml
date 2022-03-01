@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 
 Description: >
@@ -9,22 +9,19 @@ Description: >
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
-      -
-        Label:
+      - Label:
           default: "Frontend"
         Parameters:
           - pProjectName
           - pRepoUrl
           - pBranch
           - pOauthToken
-      -
-        Label:
+      - Label:
           default: "Bucket Configuration"
         Parameters:
           - pBucketPrefix
           - pTargetBucketName
           - pTargetBucketPrefix
-
 
     ParameterLabels:
       pProjectName:
@@ -32,7 +29,7 @@ Metadata:
       pBranch:
         default: "Repository Branch"
       pOauthToken:
-        default: 'Access Token'
+        default: "Access Token"
       pRepoUrl:
         default: "repository URL"
       pBucketPrefix:
@@ -41,9 +38,8 @@ Metadata:
         default: "Name of Target Bucket"
       pTargetBucketPrefix:
         default: "Name of Target Bucket Prefix"
-     
-######################################################################
 
+######################################################################
 
 Parameters:
   pBranch:
@@ -56,33 +52,83 @@ Parameters:
 
   pOauthToken:
     Type: String
-    Description: Bitbucket Repository Access Token
+    Description: Repository Access Token
 
   pRepoUrl:
     Type: String
-    Description: Bitbucket Repository URL
+    Description: Repository URL
 
   pBucketPrefix:
     Type: String
     Description: Bucket Prefix
-    Default: ''
+    Default: ""
 
   pTargetBucketPrefix:
     Type: String
     Description: Target Bucket Prefix
-    Default: ''
+    Default: ""
 
   pTargetBucketName:
     Type: String
     Description: Target Bucket Name
-    Default: ''
+    Default: ""
     # AllowedPattern: ^[a-z0-9]-
+
+    ############ CONDITION ##############
+
+Conditions:
+  HasBranch: !Not
+    - !Equals
+      - !Ref pBranch
+      - ""
+
+  HasProjectName: !Not
+    - !Equals
+      - !Ref pProjectName
+      - ""
+
+  HasToken: !Not
+    - !Equals
+      - !Ref pOauthToken
+      - ""
+
+  HasRepoUrl: !Not
+    - !Equals
+      - !Ref pRepoUrl
+      - ""
+
+  HasBucketPrefix: !Not
+    - !Equals
+      - !Ref pBucketPrefix
+      - ""
+
+  HasTargetBucketPrefix: !Not
+    - !Equals
+      - !Ref pTargetBucketPrefix
+      - ""
+
+  HasTargetBucketName: !Not
+    - !Equals
+      - !Ref pTargetBucketName
+      - ""
+
+  CreateResources: !And
+    - !Condition HasBranch
+    - !Condition HasProjectName
+    - !Condition HasToken
+    - !Condition HasRepoUrl
+    - !Condition HasBucketPrefix
+    - !Condition HasTargetBucketPrefix
+    - !Condition HasTargetBucketName
+
+############## RESOURCES #####################33
 
 Resources:
   rAmplifyRoleS3UploadTool:
     Type: AWS::IAM::Role
+    Condition: CreateResources
     Properties:
-      RoleName: !Sub '${pProjectName}-${pBranch}-amplify'
+      RoleName: !Sub "${pProjectName}-${pBranch}-amplify"
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -93,7 +139,7 @@ Resources:
             Action:
               - sts:AssumeRole
       Policies:
-        - PolicyName: !Sub '${pProjectName}-${pBranch}-amplify'
+        - PolicyName: !Sub "${pProjectName}-${pBranch}-amplify"
           PolicyDocument:
             Version: 2012-10-17
             Statement:
@@ -106,15 +152,17 @@ Resources:
           Value: !Ref pProjectName
         - Key: Branch
           Value: !Ref pBranch
+
   rAmplifyAppS3UploadTool:
     Type: AWS::Amplify::App
+    Condition: CreateResources
     Properties:
-      Name: !Sub '${pProjectName}-${pBranch}-ui'
+      Name: !Sub "${pProjectName}-${pBranch}-ui"
       Description: Angular App
       CustomRules:
         - Source: '</^[^.]+$|\.(?!(css|gif|ico|jpg|js|png|txt|svg|woff|ttf)$)([^.]+$)/>'
-          Target: '/index.html'
-          Status: '200'
+          Target: "/index.html"
+          Status: "200"
       EnvironmentVariables:
         - Name: PROJECT_NAME
           Value: !Ref pProjectName
@@ -142,8 +190,10 @@ Resources:
         - Key: Environment
           Value: !Ref pBranch
       IAMServiceRole: !GetAtt rAmplifyRoleS3UploadTool.Arn
+
   rAmplifyBranchS3UploadTool:
     Type: AWS::Amplify::Branch
+    Condition: CreateResources
     Properties:
       BranchName: !Ref pBranch
       AppId: !GetAtt rAmplifyAppS3UploadTool.AppId
@@ -157,6 +207,7 @@ Resources:
 
   rUserPoolS3UploadTool:
     Type: AWS::Cognito::UserPool
+    Condition: CreateResources
     Properties:
       AdminCreateUserConfig:
         AllowAdminCreateUserOnly: true
@@ -168,9 +219,9 @@ Resources:
           Name: nickname
           Required: true
         # - AttributeDataType: String
-          # Mutable: true
-          # Name: family_name
-          # Required: true
+        # Mutable: true
+        # Name: family_name
+        # Required: true
         - AttributeDataType: String
           Mutable: false
           Name: email
@@ -179,10 +230,11 @@ Resources:
         - email
       UsernameConfiguration:
         CaseSensitive: false
-      UserPoolName: !Sub '${pProjectName}-${pBranch}-S3UploadPool'
+      UserPoolName: !Sub "${pProjectName}-${pBranch}-S3UploadPool"
 
   rAmplifyCognitoClientlS3UploadTool:
     Type: AWS::Cognito::UserPoolClient
+    Condition: CreateResources
     Properties:
       AccessTokenValidity: 1
       AllowedOAuthFlows:
@@ -195,7 +247,7 @@ Resources:
       CallbackURLs:
         - "http://localhost:4200/login"
         # - !Sub 'https://${rAmplifyBranchS3UploadTool.BranchName}.${rAmplifyAppS3UploadTool.DefaultDomain}/login'
-      ClientName: !Sub '${pProjectName}-${pBranch}-S3UploadClient'
+      ClientName: !Sub "${pProjectName}-${pBranch}-S3UploadClient"
       EnableTokenRevocation: true
       ExplicitAuthFlows:
         - ALLOW_ADMIN_USER_PASSWORD_AUTH
@@ -223,7 +275,8 @@ Resources:
 
   S3UploadIdentityPool:
     Type: AWS::Cognito::IdentityPool
-    Properties: 
+    Condition: CreateResources
+    Properties:
       AllowClassicFlow: false
       AllowUnauthenticatedIdentities: false
       # CognitoEvents: Json
@@ -231,29 +284,30 @@ Resources:
         - ClientId: !Ref rAmplifyCognitoClientlS3UploadTool
           ProviderName: !GetAtt rUserPoolS3UploadTool.ProviderName
           ServerSideTokenCheck: false
-      # CognitoStreams: 
+      # CognitoStreams:
       #   CognitoStreams
       # DeveloperProviderName: String
-      IdentityPoolName: !Sub '${pProjectName}-${pBranch}-S3UploadIdentityPool'
-      # OpenIdConnectProviderARNs: 
+      IdentityPoolName: !Sub "${pProjectName}-${pBranch}-S3UploadIdentityPool"
+      # OpenIdConnectProviderARNs:
       #   - String
-      # PushSync: 
+      # PushSync:
       #   PushSync
-      # SamlProviderARNs: 
+      # SamlProviderARNs:
       #   - String
       # SupportedLoginProviders: Json
 
   AuthUserRoleS3UploadTool:
     Type: AWS::IAM::Role
+    Condition: CreateResources
     Properties:
-      RoleName: !Sub '${pProjectName}-${pBranch}-AuthUserRoleS3UploadTool'
+      RoleName: !Sub "${pProjectName}-${pBranch}-AuthUserRoleS3UploadTool"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
-        Statement: 
+        Statement:
           - Effect: Allow
-            Principal: 
+            Principal:
               Federated: cognito-identity.amazonaws.com
-            Action: 
+            Action:
               - sts:AssumeRoleWithWebIdentity
             Condition:
               StringEquals:
@@ -261,7 +315,7 @@ Resources:
               ForAnyValue:StringLike:
                 cognito-identity.amazonaws.com:amr: authenticated
       Policies:
-        - PolicyName: !Sub '${pProjectName}-${pBranch}-S3UploadToolAuth'
+        - PolicyName: !Sub "${pProjectName}-${pBranch}-S3UploadToolAuth"
           PolicyDocument:
             Version: 2012-10-17
             Statement:
@@ -276,7 +330,7 @@ Resources:
                 Action:
                   - s3:ListBucket
                 Resource:
-                  - !Sub 'arn:aws:s3:::${s3uploadbucket}'
+                  - !Sub "arn:aws:s3:::${s3uploadbucket}"
                 Condition:
                   StringLike:
                     s3:prefix:
@@ -289,20 +343,20 @@ Resources:
                   - s3:PutObject
                 Resource:
                   # - !Sub arn:aws:s3:::${pBucketName}/${pBucketPrefix}/${!cognito-identity.amazonaws.com:sub}
-                  - !Sub 'arn:aws:s3:::${s3uploadbucket}/${pBucketPrefix}/${!cognito-identity.amazonaws.com:sub}/*'
-
+                  - !Sub "arn:aws:s3:::${s3uploadbucket}/${pBucketPrefix}/${!cognito-identity.amazonaws.com:sub}/*"
 
   UnAuthUserRoleS3UploadTool:
     Type: AWS::IAM::Role
+    Condition: CreateResources
     Properties:
-      RoleName: !Sub '${pProjectName}-${pBranch}-NothingAllowed'
+      RoleName: !Sub "${pProjectName}-${pBranch}-NothingAllowed"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
-        Statement: 
+        Statement:
           - Effect: Allow
-            Principal: 
+            Principal:
               Federated: cognito-identity.amazonaws.com
-            Action: 
+            Action:
               - sts:AssumeRoleWithWebIdentity
             Condition:
               StringEquals:
@@ -310,7 +364,7 @@ Resources:
               ForAnyValue:StringLike:
                 cognito-identity.amazonaws.com:amr: unauthenticated
       Policies:
-        - PolicyName: !Sub '${pProjectName}-${pBranch}-nothingAllowed'
+        - PolicyName: !Sub "${pProjectName}-${pBranch}-nothingAllowed"
           PolicyDocument:
             Version: 2012-10-17
             Statement:
@@ -320,31 +374,31 @@ Resources:
                 Resource:
                   - "*"
 
-
-  IdentityPoolRoleAttachmentS3UploadTool: 
-    Type: AWS::Cognito::IdentityPoolRoleAttachment 
-    Properties: 
+  IdentityPoolRoleAttachmentS3UploadTool:
+    Type: AWS::Cognito::IdentityPoolRoleAttachment
+    Condition: CreateResources
+    Properties:
       IdentityPoolId: !Ref S3UploadIdentityPool
-      Roles: 
+      Roles:
         "authenticated": !GetAtt AuthUserRoleS3UploadTool.Arn
-        "unauthenticated" : !GetAtt UnAuthUserRoleS3UploadTool.Arn
-        # "unauthenticated": !GetAtt UnAuthenticatedRole.Arn 
-      # RoleMappings:  
-        # "userpool1": 
-          # IdentityProvider: 
-          # AmbiguousRoleResolution: Deny 
-          # Type: Token 
-          # RulesConfiguration: 
-          #   Rules: 
-          #     - Claim: "sub" 
-          #       MatchType: "Equals" 
-          #       RoleARN: !GetAtt rAmplifyRoleS3UploadTool.Arn 
-          #       Value: "goodvalue"
+        "unauthenticated": !GetAtt UnAuthUserRoleS3UploadTool.Arn
+        # "unauthenticated": !GetAtt UnAuthenticatedRole.Arn
+      # RoleMappings:
+      # "userpool1":
+      # IdentityProvider:
+      # AmbiguousRoleResolution: Deny
+      # Type: Token
+      # RulesConfiguration:
+      #   Rules:
+      #     - Claim: "sub"
+      #       MatchType: "Equals"
+      #       RoleARN: !GetAtt rAmplifyRoleS3UploadTool.Arn
+      #       Value: "goodvalue"
 
   s3uploadbucket:
     Type: AWS::S3::Bucket
     DeletionPolicy: Retain
-    
+
     Properties:
       PublicAccessBlockConfiguration:
         BlockPublicAcls: True
@@ -356,22 +410,22 @@ Resources:
           - AllowedMethods:
               - GET
               - PUT
-              - DELETE
-            AllowedOrigins: 
+            AllowedOrigins:
               - "*"
             AllowedHeaders:
               - "*"
 
   CopyFile:
     Type: AWS::Serverless::Function
+    Condition: CreateResources
     # DependsOn: s3uploadbucket
     Properties:
       CodeUri: copyFile/
       Handler: app.lambda_handler
       Runtime: python3.8
-      Environment: 
-        Variables: 
-          TargetBucket: !Ref pTargetBucketName 
+      Environment:
+        Variables:
+          TargetBucket: !Ref pTargetBucketName
           TargetBucketPrefix: !Ref pTargetBucketPrefix
 
       Events:
@@ -380,68 +434,74 @@ Resources:
           Properties:
             Bucket:
               Ref: s3uploadbucket
-            Events: 
+            Events:
               - s3:ObjectCreated:*
 
       Policies:
-      - Statement:
-        - Sid: S3copyFiles
-          Effect: Allow
-          Action:
-          - s3:*
-          Resource: 
-          # -  !Sub 'arn:aws:s3:::${s3uploadbucket}'
-          -  !Sub 'arn:aws:s3:::*'
-          -  !Sub 'arn:aws:s3:::*/*'
-          -  !Sub 'arn:aws:s3:::${pTargetBucketName}'
-          -  !Sub 'arn:aws:s3:::${pTargetBucketName}/*'
-
+        - Statement:
+            - Sid: S3copyFiles
+              Effect: Allow
+              Action:
+                - s3:*
+              Resource:
+                # -  !Sub 'arn:aws:s3:::${s3uploadbucket}'
+                - !Sub "arn:aws:s3:::*"
+                - !Sub "arn:aws:s3:::*/*"
+                - !Sub "arn:aws:s3:::${pTargetBucketName}"
+                - !Sub "arn:aws:s3:::${pTargetBucketName}/*"
 
 Outputs:
   oDefaultDomain:
-    Value: !Sub 'https://${pBranch}.${rAmplifyAppS3UploadTool.DefaultDomain}'
+    Condition: CreateResources
+    Value: !Sub "https://${pBranch}.${rAmplifyAppS3UploadTool.DefaultDomain}"
     Description: Amplify URL
     Export:
-      Name: !Sub '${pProjectName}-${pBranch}-S3UploadToolDomain'
+      Name: !Sub "${pProjectName}-${pBranch}-S3UploadToolDomain"
 
   oUserPoolARN:
+    Condition: CreateResources
     Value: !GetAtt rUserPoolS3UploadTool.Arn
     Description: UserPool ARN
     Export:
-      Name: !Sub '${pProjectName}-${pBranch}-UserPoolARN-S3UploadTool'
+      Name: !Sub "${pProjectName}-${pBranch}-UserPoolARN-S3UploadTool"
 
   orAmplifyCognitoClientlS3UploadTool:
+    Condition: CreateResources
     Value: !Ref rAmplifyCognitoClientlS3UploadTool
     Description: rAmplifyCognitoClientlS3UploadTool
     Export:
-      Name: !Sub '${pProjectName}-${pBranch}-userpoolswebclientid'
+      Name: !Sub "${pProjectName}-${pBranch}-userpoolswebclientid"
 
   orUserPoolS3UploadToolProviderName:
+    Condition: CreateResources
     Value: !GetAtt rUserPoolS3UploadTool.ProviderName
     Description: CognitoIdentityProviderName
     Export:
-      Name: !Sub '${pProjectName}-${pBranch}-rUserPoolS3UploadToolProviderName'
+      Name: !Sub "${pProjectName}-${pBranch}-rUserPoolS3UploadToolProviderName"
 
   opBucketName:
     Value: !Ref s3uploadbucket
     Description: File S3 Bucket
     Export:
-      Name: !Sub '${pProjectName}-${pBranch}-S3UploadBucketName'
+      Name: !Sub "${pProjectName}-${pBranch}-S3UploadBucketName"
 
   oUserPoolId:
+    Condition: CreateResources
     Value: !Ref rUserPoolS3UploadTool
     Description: Userpoolid
     Export:
-      Name: !Sub '${pProjectName}-${pBranch}-UserPoolID'
-  
+      Name: !Sub "${pProjectName}-${pBranch}-UserPoolID"
+
   oS3UploadIdentityPoolId:
+    Condition: CreateResources
     Value: !Ref S3UploadIdentityPool
     Description: Identity Pool Id
     Export:
-      Name: !Sub '${pProjectName}-${pBranch}-S3UploadIdentityPool'
+      Name: !Sub "${pProjectName}-${pBranch}-S3UploadIdentityPool"
 
   oBucketPrefix:
+    Condition: CreateResources
     Value: !Ref pBucketPrefix
     Description: Bucket Prefix
     Export:
-      Name: !Sub '${pProjectName}-${pBranch}-S3UploadBucketNamePrefix'
+      Name: !Sub "${pProjectName}-${pBranch}-S3UploadBucketNamePrefix"
