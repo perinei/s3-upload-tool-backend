@@ -15,10 +15,10 @@ def lambda_handler(event, context):
     print(source_bucket)
     print("source key")
     print(source_key)
-    email = source_key.split('/')[2]
+    nickname = source_key.split('/')[2]
     file_name = source_key.split('/')[3]
     print("relailer name")
-    print(email)
+    print(nickname)
     print("file name")
     print(file_name)
     copy_source = {
@@ -26,7 +26,7 @@ def lambda_handler(event, context):
     'Key': source_key
     }
     bucket = s3.Bucket(source_bucket)
-    bucket.copy(copy_source, "processedFiles" + "/" + email + "-" + file_name)
+    bucket.copy(copy_source, "processedFiles" + "/" + nickname + "/" + file_name)
     print("copy file complete")
 
 
