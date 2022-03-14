@@ -407,6 +407,11 @@ Resources:
               Ref: s3uploadbucket
             Events:
               - s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                - Name: prefix
+                  Value: !Ref pBucketPrefix
 
       Policies:
         - Statement:
