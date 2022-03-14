@@ -3,8 +3,6 @@ import os
 from urllib.parse import unquote
 
 s3 = boto3.resource('s3',verify=True,region_name=os.environ['AWS_REGION'])
-# TargetBucket = os.environ.get('TargetBucket')
-# TargetBucketPrefix = os.environ.get('TargetBucketPrefix')
 
 def lambda_handler(event, context):
     print('copy file started')
