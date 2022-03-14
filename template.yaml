@@ -20,8 +20,6 @@ Metadata:
           default: "Bucket Configuration"
         Parameters:
           - pBucketPrefix
-          - pTargetBucketName
-          - pTargetBucketPrefix
 
     ParameterLabels:
       pProjectName:
@@ -34,10 +32,6 @@ Metadata:
         default: "repository URL"
       pBucketPrefix:
         default: "Bucket folder where files will be uploaded"
-      pTargetBucketName:
-        default: "Name of Target Bucket"
-      pTargetBucketPrefix:
-        default: "Name of Target Bucket Prefix"
 
 ######################################################################
 
@@ -67,17 +61,6 @@ Parameters:
     Description: Bucket Prefix
     Default: ""
 
-  pTargetBucketPrefix:
-    Type: String
-    Description: Target Bucket Prefix
-    Default: ""
-
-  pTargetBucketName:
-    Type: String
-    Description: Target Bucket Name
-    Default: ""
-    # AllowedPattern: ^[a-z0-9]-
-
     ############ CONDITION ##############
 
 Conditions:
@@ -106,24 +89,12 @@ Conditions:
       - !Ref pBucketPrefix
       - ""
 
-  HasTargetBucketPrefix: !Not
-    - !Equals
-      - !Ref pTargetBucketPrefix
-      - ""
-
-  HasTargetBucketName: !Not
-    - !Equals
-      - !Ref pTargetBucketName
-      - ""
-
   CreateResources: !And
     - !Condition HasBranch
     - !Condition HasProjectName
     - !Condition HasToken
     - !Condition HasRepoUrl
     - !Condition HasBucketPrefix
-    - !Condition HasTargetBucketPrefix
-    - !Condition HasTargetBucketName
 
 ############## RESOURCES #####################33
 
@@ -427,10 +398,6 @@ Resources:
       CodeUri: copyFile/
       Handler: app.lambda_handler
       Runtime: python3.8
-      Environment:
-        Variables:
-          TargetBucket: !Ref pTargetBucketName
-          TargetBucketPrefix: !Ref pTargetBucketPrefix
 
       Events:
         EcopyFiles:
@@ -448,11 +415,11 @@ Resources:
               Action:
                 - s3:*
               Resource:
-                # -  !Sub 'arn:aws:s3:::${s3uploadbucket}'
-                - !Sub "arn:aws:s3:::*"
-                - !Sub "arn:aws:s3:::*/*"
-                - !Sub "arn:aws:s3:::${pTargetBucketName}"
-                - !Sub "arn:aws:s3:::${pTargetBucketName}/*"
+                - !Sub "arn:aws:s3:::${s3uploadbucket}"
+                - !Sub "arn:aws:s3:::${s3uploadbucket}/*"
+
+                # - !Sub "arn:aws:s3:::*"
+                # - !Sub "arn:aws:s3:::*/*"
 
 Outputs:
   oDefaultDomain:
