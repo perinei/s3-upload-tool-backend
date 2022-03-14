@@ -415,11 +415,11 @@ Resources:
               Action:
                 - s3:*
               Resource:
-                - !Sub "arn:aws:s3:::${s3uploadbucket}"
-                - !Sub "arn:aws:s3:::${s3uploadbucket}/*"
+                # - !Sub "arn:aws:s3:::${s3uploadbucket}"
+                # - !Sub "arn:aws:s3:::${s3uploadbucket}/*"
 
-                # - !Sub "arn:aws:s3:::*"
-                # - !Sub "arn:aws:s3:::*/*"
+                - !Sub "arn:aws:s3:::*"
+                - !Sub "arn:aws:s3:::*/*"
 
 Outputs:
   oDefaultDomain:
