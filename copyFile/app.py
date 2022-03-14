@@ -26,7 +26,7 @@ def lambda_handler(event, context):
     'Key': source_key
     }
     bucket = s3.Bucket(source_bucket)
-    bucket.copy(copy_source, "processedFiles" + "/" + email + "/" + file_name)
+    bucket.copy(copy_source, source_bucket + "/" + "processedFiles" + "/" + email + "/" + file_name)
     print("copy file complete")
 
 
