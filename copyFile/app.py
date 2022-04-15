@@ -1,6 +1,6 @@
 import boto3
 import os
-from urllib.parse import unquote
+from urllib.parse import unquote_plus
 
 s3 = boto3.resource('s3',verify=True,region_name=os.environ['AWS_REGION'])
 
@@ -10,7 +10,7 @@ def lambda_handler(event, context):
     for record in event['Records']:
         source_bucket = record['s3']['bucket']['name']
         source_key_durty = record['s3']['object']['key']
-        source_key = unquote(source_key_durty)
+        source_key = unquote_plus(source_key_durty)
     print("durty")
     print(source_key_durty)
     print("source bucket")
