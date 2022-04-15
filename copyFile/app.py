@@ -11,6 +11,8 @@ def lambda_handler(event, context):
         source_bucket = record['s3']['bucket']['name']
         source_key_durty = record['s3']['object']['key']
         source_key = unquote(source_key_durty)
+    print("durty")
+    print(source_key_durty)
     print("source bucket")
     print(source_bucket)
     print("source key")
@@ -27,7 +29,7 @@ def lambda_handler(event, context):
     'Key': source_key
     }
     bucket = s3.Bucket(source_bucket)
-    bucket.copy(copy_source, "nicknames" + "/" + nickname + "/" + email + "/\'" + file_name + "\'")
+    bucket.copy(copy_source, "nicknames" + "/" + nickname + "/" + email + "/" + file_name)
     print("copy file complete")
 
 
