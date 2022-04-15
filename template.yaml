@@ -309,7 +309,6 @@ Resources:
                 Condition:
                   StringLike:
                     s3:prefix:
-                      # - !Sub ${pBucketPrefix}/${!cognito-identity.amazonaws.com:sub}
                       - !Sub ${pBucketPrefix}/${!cognito-identity.amazonaws.com:sub}/*
 
               - Effect: Allow
@@ -317,7 +316,6 @@ Resources:
                   - s3:GetObject
                   - s3:PutObject
                 Resource:
-                  # - !Sub arn:aws:s3:::${pBucketName}/${pBucketPrefix}/${!cognito-identity.amazonaws.com:sub}
                   - !Sub "arn:aws:s3:::${s3uploadbucket}/${pBucketPrefix}/${!cognito-identity.amazonaws.com:sub}/*"
 
   UnAuthUserRoleS3UploadTool:
