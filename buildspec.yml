@@ -28,7 +28,7 @@ phases:
       - sam deploy 
         --no-confirm-changeset 
         --no-fail-on-empty-changeset 
-        --stack-name $PROJECT_NAME
+        --stack-name s3-upload-tool-backend
         --resolve-s3 
         --capabilities CAPABILITY_NAMED_IAM
         # --parameter-overrides pVersion=2 pState=$PROJECT_NAME
